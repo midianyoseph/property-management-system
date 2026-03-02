@@ -7,6 +7,7 @@ import { authMiddleware } from './middleware/auth';
 import { errorHandler } from './middleware/errorHandler';
 import { invoicesRouter } from './routes/invoices';
 import { leasesRouter } from './routes/leases';
+import { maintenanceRouter } from './routes/maintenance';
 import { paymentsRouter } from './routes/payments';
 import { propertiesRouter } from './routes/properties';
 import { tenantsRouter } from './routes/tenants';
@@ -26,6 +27,7 @@ app.use('/api', authMiddleware, tenantsRouter);
 app.use('/api', authMiddleware, leasesRouter);
 app.use('/api', authMiddleware, invoicesRouter);
 app.use('/api', authMiddleware, paymentsRouter);
+app.use('/api', authMiddleware, maintenanceRouter);
 
 app.use(errorHandler);
 
