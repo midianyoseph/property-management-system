@@ -5,7 +5,9 @@ import helmet from 'helmet';
 
 import { authMiddleware } from './middleware/auth';
 import { errorHandler } from './middleware/errorHandler';
+import { leasesRouter } from './routes/leases';
 import { propertiesRouter } from './routes/properties';
+import { tenantsRouter } from './routes/tenants';
 
 const app = express();
 
@@ -18,6 +20,8 @@ app.get('/health', (_req, res) => {
 });
 
 app.use('/api', authMiddleware, propertiesRouter);
+app.use('/api', authMiddleware, tenantsRouter);
+app.use('/api', authMiddleware, leasesRouter);
 
 app.use(errorHandler);
 
