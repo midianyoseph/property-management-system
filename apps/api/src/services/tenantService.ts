@@ -6,16 +6,17 @@ type HttpError = Error & { statusCode: number };
 type CreateTenantPayload = {
   email: string;
   password: string;
-  full_name?: string;
-  primary_phone: string;
-  secondary_phone?: string;
-  date_of_birth?: string;
+  first_name: string;
+  last_name: string;
+  phone: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
 };
 
 type UpdateTenantProfilePayload = {
-  primary_phone?: string;
-  secondary_phone?: string;
-  date_of_birth?: string;
+  phone?: string;
+  emergency_contact_name?: string;
+  emergency_contact_phone?: string;
 };
 
 function createHttpError(statusCode: number, message: string): HttpError {
@@ -112,7 +113,8 @@ export async function createTenant(data: CreateTenantPayload) {
       password: data.password,
       email_confirm: true,
       user_metadata: {
-        full_name: data.full_name,
+        first_name: data.first_name,
+        last_name: data.last_name,
       },
       app_metadata: {
         role: UserRole.TENANT,
@@ -127,9 +129,9 @@ export async function createTenant(data: CreateTenantPayload) {
 
     const tenantPayload = removeUndefined({
       user_id: createdAuthUserId,
-      primary_phone: data.primary_phone,
-      secondary_phone: data.secondary_phone,
-      date_of_birth: data.date_of_birth,
+      phone: data.phone,
+      emergency_contact_name: data.emergency_contact_name,
+      emergency_contact_phone: data.emergency_contact_phone,
     });
 
     const { data: tenant, error: tenantError } = await supabaseAdmin

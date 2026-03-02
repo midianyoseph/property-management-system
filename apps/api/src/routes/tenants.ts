@@ -69,17 +69,18 @@ const paginationSchema = z.object({
 const createTenantSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
-  full_name: z.string().trim().min(1).optional(),
-  primary_phone: z.string().trim().min(1),
-  secondary_phone: z.string().trim().min(1).optional(),
-  date_of_birth: z.string().datetime().optional(),
+  first_name: z.string().trim().min(1),
+  last_name: z.string().trim().min(1),
+  phone: z.string().trim().min(1),
+  emergency_contact_name: z.string().trim().min(1).optional(),
+  emergency_contact_phone: z.string().trim().min(1).optional(),
 });
 
 const tenantProfilePatchSchema = z
   .object({
-    primary_phone: z.string().trim().min(1).optional(),
-    secondary_phone: z.string().trim().min(1).optional(),
-    date_of_birth: z.string().datetime().optional(),
+    phone: z.string().trim().min(1).optional(),
+    emergency_contact_name: z.string().trim().min(1).optional(),
+    emergency_contact_phone: z.string().trim().min(1).optional(),
   })
   .refine((value) => Object.keys(value).length > 0, 'At least one profile field must be provided');
 

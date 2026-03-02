@@ -69,10 +69,11 @@ const tenantIdParamSchema = z.object({
 const createLeaseSchema = z.object({
   unit_id: z.string().uuid(),
   tenant_id: z.string().uuid(),
-  start_date: z.string().datetime(),
-  end_date: z.string().datetime(),
-  rent_amount: z.number().nonnegative(),
-  deposit_amount: z.number().nonnegative().optional(),
+  property_id: z.string().uuid(),
+  start_date: z.string(),
+  end_date: z.string(),
+  monthly_rent: z.number().nonnegative(),
+  security_deposit: z.number().nonnegative().optional(),
   status: z.nativeEnum(LeaseStatus).optional(),
 });
 

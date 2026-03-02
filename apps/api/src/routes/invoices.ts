@@ -100,7 +100,6 @@ const createInvoiceSchema = z.object({
   lease_id: z.string().uuid(),
   issue_date: z.string().datetime(),
   due_date: z.string().datetime(),
-  currency: z.string().trim().min(1).optional(),
   status: z.nativeEnum(InvoiceStatus).optional(),
   items: z
     .array(

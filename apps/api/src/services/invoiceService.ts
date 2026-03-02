@@ -14,7 +14,6 @@ type CreateInvoicePayload = {
   lease_id: string;
   issue_date: string;
   due_date: string;
-  currency?: string;
   status?: InvoiceStatus;
   items: InvoiceLineItemInput[];
 };
@@ -102,7 +101,6 @@ export async function createInvoice(data: CreateInvoicePayload) {
       due_date: data.due_date,
       status: invoiceStatus,
       total_amount: totalAmount,
-      currency: data.currency ?? 'USD',
     })
     .select('*')
     .single();

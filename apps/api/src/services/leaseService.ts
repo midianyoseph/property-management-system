@@ -6,10 +6,11 @@ type HttpError = Error & { statusCode: number };
 type CreateLeasePayload = {
   unit_id: string;
   tenant_id: string;
+  property_id: string;
   start_date: string;
   end_date: string;
-  rent_amount: number;
-  deposit_amount?: number;
+  monthly_rent: number;
+  security_deposit?: number;
   status?: LeaseStatus;
 };
 
@@ -27,7 +28,13 @@ function removeUndefined<T extends Record<string, unknown>>(value: T): Partial<T
 
 export async function createLease(data: CreateLeasePayload) {
   const leasePayload = removeUndefined({
-    ...data,
+    tenant_id: data.tenant_id,
+    unit_id: data.unit_id,
+    property_id: data.property_id,
+    start_date: data.start_date,
+    end_date: data.end_date,
+    monthly_rent: data.monthly_rent,
+    security_deposit: data.security_deposit,
     status: data.status ?? LeaseStatus.ACTIVE,
   });
 
