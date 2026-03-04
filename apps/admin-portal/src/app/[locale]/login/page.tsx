@@ -2,16 +2,28 @@
 
 import { useState } from 'react';
 import { createClient } from '../../../lib/supabase/client';
-import { useRouter } from 'next/navigation';
-import { Building2, Lock, Mail, Loader2, Home } from 'lucide-react'; // Standard icons
+import { usePathname, useRouter } from 'next/navigation'; // Standard next navigation
+import { Building2, Lock, Mail, Loader2, Home, Languages } from 'lucide-react';
+import { useTranslations, useLocale } from 'next-intl';
 
 export default function LoginPage() {
+  const t = useTranslations('Login');
+  const locale = useLocale();
+  const pathname = usePathname();
+  const router = useRouter();
+  
   const supabase = createClient();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const router = useRouter();
+
+  // Language Switcher Logic
+  const handleLanguageChange = (newLocale: string) => {
+    // Replaces the current locale segment in the URL
+    const newPath = pathname.replace(`/${locale}`, `/${newLocale}`);
+    router.push(newPath);
+  };
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,12 +45,12 @@ export default function LoginPage() {
     
     if (role !== 'ADMIN') {
       await supabase.auth.signOut();
-      setError("Access denied: Admin privileges required.");
+      setError(t('accessDenied'));
       setLoading(false);
       return;
     }
 
-    router.push('/dashboard');
+    router.push(`/${locale}/dashboard`);
   };
 
   return (
@@ -51,7 +63,7 @@ export default function LoginPage() {
             <div className="bg-indigo-600 p-3 rounded-xl shadow-lg shadow-indigo-500/20">
               <Building2 className="w-8 h-8 text-white" />
             </div>
-            <h1 className="text-3xl font-bold text-white tracking-tight">PropManage Pro</h1>
+            <h1 className="text-3xl font-bold text-white tracking-tight">{t('title')}</h1>
           </div>
           <p className="text-slate-400 text-lg leading-relaxed">
             Manage your properties, units, and lease documents with ease. The ultimate dashboard for modern property managers.
@@ -70,7 +82,24 @@ export default function LoginPage() {
       </div>
 
       {/* Right Side: Login Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12">
+      <div className="w-full lg:w-1/2 flex items-center justify-center p-6 sm:p-12 relative">
+        {/* Floating Language Switcher */}
+        <div className="absolute top-8 right-8 flex items-center gap-2 bg-white p-1 rounded-lg border border-slate-200 shadow-sm">
+          <Languages className="w-4 h-4 text-slate-400 ml-2" />
+          <button 
+            onClick={() => handleLanguageChange('en')}
+            className={`px-3 py-1 text-xs font-bold rounded ${locale === 'en' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+          >
+            EN
+          </button>
+          <button 
+            onClick={() => handleLanguageChange('am')}
+            className={`px-3 py-1 text-xs font-bold rounded ${locale === 'am' ? 'bg-slate-900 text-white' : 'text-slate-600 hover:bg-slate-100'}`}
+          >
+            አማ
+          </button>
+        </div>
+
         <div className="w-full max-w-md">
           <div className="mb-10 lg:hidden flex items-center gap-2">
              <Building2 className="w-6 h-6 text-indigo-600" />
@@ -78,8 +107,8 @@ export default function LoginPage() {
           </div>
 
           <div className="mb-8">
-            <h2 className="text-3xl font-bold text-slate-900">Welcome back</h2>
-            <p className="text-slate-500 mt-2 text-sm">Please enter your admin credentials to continue.</p>
+            <h2 className="text-3xl font-bold text-slate-900">{t('welcome')}</h2>
+            <p className="text-slate-500 mt-2 text-sm">{t('subtitle')}</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-5">
@@ -91,7 +120,7 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-semibold text-slate-700" htmlFor="email">
-                Email Address
+                {t('emailLabel')}
               </label>
               <div className="relative">
                 <Mail className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
@@ -99,7 +128,7 @@ export default function LoginPage() {
                   id="email"
                   type="email"
                   placeholder="admin@property.com"
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-900"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
@@ -109,7 +138,7 @@ export default function LoginPage() {
 
             <div className="space-y-2">
               <label className="text-sm font-semibold text-slate-700" htmlFor="password">
-                Password
+                {t('passwordLabel')}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 w-5 h-5 text-slate-400" />
@@ -117,7 +146,7 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   placeholder="••••••••"
-                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-all text-slate-900"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   required
@@ -133,13 +162,13 @@ export default function LoginPage() {
               {loading ? (
                 <Loader2 className="w-5 h-5 animate-spin" />
               ) : (
-                'Sign In to Dashboard'
+                t('submit')
               )}
             </button>
           </form>
 
           <footer className="mt-12 text-center text-slate-400 text-xs">
-            &copy; {new Date().getFullYear()} PropManage Pro Admin System. All rights reserved.
+            &copy; {new Date().getFullYear()} {t('title')} Admin System. All rights reserved.
           </footer>
         </div>
       </div>
