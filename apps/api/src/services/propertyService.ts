@@ -38,7 +38,7 @@ function removeUndefined<T extends Record<string, unknown>>(value: T): Partial<T
 export async function getAllProperties(adminUserId: string) {
   const { data, error } = await supabaseAdmin
     .from('properties')
-    .select('*')
+    .select('*, units(*)')
     .eq('created_by', adminUserId)
     .order('created_at', { ascending: false });
 
