@@ -1,36 +1,21 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
-import { Plus, Loader2 } from 'lucide-react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { Loader2, AlertCircle, Home, FileWarning, ArrowRight, Building2, ChevronRight } from 'lucide-react';
 
 // Hooks & Components
 import { useApi } from './hooks/useApi';
 import { Sidebar } from './components/Sidebar';
 import { PropertyCard } from './components/PropertCard';
-import { PropertyModal } from './components/PropertyModal';
-import { UnitModal } from './components/UnitModal';
-import { TenantInviteModal } from './components/TenantInviteModal';
 
 export default function AdminDashboard() {
   const { apiRequest } = useApi();
-  
-  // Data State
   const [properties, setProperties] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [submitting, setSubmitting] = useState(false);
   
-  // Modal Visibility States
-  const [isPropModalOpen, setPropModalOpen] = useState(false);
-  const [isUnitModalOpen, setUnitModalOpen] = useState(false);
-  const [isEditUnitModalOpen, setEditUnitModalOpen] = useState(false);
-  const [isInviteModalOpen, setInviteModalOpen] = useState(false);
-  
-  // Track Active Data
-  const [activeProperty, setActiveProperty] = useState<{id: string, name: string} | null>(null);
-  const [unitToEdit, setUnitToEdit] = useState<any>(null);
-  const [unitForTenant, setUnitForTenant] = useState<any>(null);
+  // New State: Track which status filter is active
+  const [activeFilter, setActiveFilter] = useState<'LATE' | 'VACANT' | 'INACTIVE_LEASE' | null>(null);
 
-  // --- DATA LOADING ---
   const loadData = useCallback(async () => {
     try {
       const json = await apiRequest('/api/properties');
@@ -44,96 +29,22 @@ export default function AdminDashboard() {
 
   useEffect(() => { loadData(); }, [loadData]);
 
-  // --- HANDLERS ---
-  const handleCreateProperty = async (payload: any) => {
-    setSubmitting(true);
-    try {
-      await apiRequest('/api/properties', {
-        method: 'POST',
-        body: JSON.stringify(payload)
+  // --- STATS CALCULATION ---
+  const stats = useMemo(() => {
+    let vacantUnits = 0;
+    let latePayments = 0;
+    let inactiveLeases = 0;
+
+    properties.forEach((p: any) => {
+      p.units?.forEach((u: any) => {
+        if (!u.is_occupied) vacantUnits++;
+        if (u.payment_status === 'late') latePayments++;
+        if (u.lease_status !== 'active' && u.is_occupied) inactiveLeases++;
       });
-      setPropModalOpen(false);
-      loadData();
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
+    });
 
-  const handleCreateUnit = async (payload: any) => {
-    if (!activeProperty) return;
-    setSubmitting(true);
-    try {
-      await apiRequest(`/api/properties/${activeProperty.id}/units`, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
-      setUnitModalOpen(false);
-      setActiveProperty(null);
-      loadData();
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  const handleUpdateUnit = async (payload: any) => {
-    if (!unitToEdit) return;
-    setSubmitting(true);
-    try {
-      await apiRequest(`/api/units/${unitToEdit.id}`, {
-        method: 'PATCH',
-        body: JSON.stringify(payload)
-      });
-      setEditUnitModalOpen(false);
-      setUnitToEdit(null);
-      loadData();
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // --- PHASE 2: ONBOARDING HANDLER ---
-  const handleOnboardTenant = async (payload: any) => {
-    if (!unitForTenant) return;
-    setSubmitting(true);
-    try {
-      // Hits your new backend route: router.post('/units/:id/onboard', ...)
-      await apiRequest(`/api/units/${unitForTenant.id}/onboard`, {
-        method: 'POST',
-        body: JSON.stringify(payload)
-      });
-      
-      setInviteModalOpen(false);
-      setUnitForTenant(null);
-      loadData(); // Refresh to show unit is now occupied
-      alert("Tenant invitation processed! Check the backend console for the simulated email.");
-    } catch (err: any) {
-      alert(err.message);
-    } finally {
-      setSubmitting(false);
-    }
-  };
-
-  // --- MODAL TRIGGERS ---
-  const openUnitModal = (property: any) => {
-    setActiveProperty({ id: property.id, name: property.name });
-    setUnitModalOpen(true);
-  };
-
-  const openEditUnitModal = (unit: any, propertyName: string) => {
-    setUnitToEdit({ ...unit, propertyName });
-    setEditUnitModalOpen(true);
-  };
-
-  const openInviteModal = (unit: any, propertyName: string) => {
-    setUnitForTenant({ ...unit, propertyName });
-    setInviteModalOpen(true);
-  };
+    return { vacantUnits, latePayments, inactiveLeases };
+  }, [properties]);
 
   if (loading) return (
     <div className="flex h-screen w-full items-center justify-center bg-slate-50">
@@ -146,76 +57,139 @@ export default function AdminDashboard() {
       <Sidebar />
 
       <main className="flex-1 lg:ml-64 p-8">
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-10">
-          <div>
-            <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">Portfolio</h1>
-            <p className="text-slate-500 text-sm font-medium">Manage your assets and inventory</p>
-          </div>
-          <button 
-            onClick={() => setPropModalOpen(true)}
-            className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-indigo-600/20"
-          >
-            <Plus size={20} /> Add Property
-          </button>
+        <header className="mb-10">
+          <h1 className="text-3xl font-black text-slate-900 tracking-tight">Executive Overview</h1>
+          <p className="text-slate-500 text-sm font-medium">Click a status card to filter units</p>
         </header>
 
-        {properties.length > 0 ? (
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
-            {properties.map((p: any) => (
-              <PropertyCard 
-                key={p.id} 
-                property={p} 
-                onAddUnit={() => openUnitModal(p)} 
-                onEditUnit={openEditUnitModal}
-                onAssignTenant={openInviteModal} 
-              />
-            ))}
+        {/* --- SECTION 1, 2, 3: STATUS CARDS --- */}
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+          {/* LATE PAYMENTS - MADE OBVIOUS */}
+          <button 
+            onClick={() => setActiveFilter(activeFilter === 'LATE' ? null : 'LATE')}
+            className={`flex flex-col p-6 rounded-[32px] border-2 transition-all text-left ${
+              activeFilter === 'LATE' ? 'border-rose-500 bg-rose-50 shadow-lg' : 'border-white bg-white shadow-sm hover:border-rose-200'
+            }`}
+          >
+            <div className="bg-rose-500 text-white p-3 rounded-2xl w-fit mb-4">
+              <AlertCircle size={28} />
+            </div>
+            <p className="text-rose-600 font-black uppercase text-xs tracking-widest">Late Payments</p>
+            <h2 className="text-4xl font-black text-slate-900">{stats.latePayments}</h2>
+            <p className="text-slate-400 text-xs font-bold mt-2">Urgent Action Required</p>
+          </button>
+
+          {/* NOT OCCUPIED */}
+          <button 
+            onClick={() => setActiveFilter(activeFilter === 'VACANT' ? null : 'VACANT')}
+            className={`flex flex-col p-6 rounded-[32px] border-2 transition-all text-left ${
+              activeFilter === 'VACANT' ? 'border-indigo-500 bg-indigo-50 shadow-lg' : 'border-white bg-white shadow-sm hover:border-indigo-200'
+            }`}
+          >
+            <div className="bg-indigo-600 text-white p-3 rounded-2xl w-fit mb-4">
+              <Home size={28} />
+            </div>
+            <p className="text-indigo-600 font-black uppercase text-xs tracking-widest">Not Occupied</p>
+            <h2 className="text-4xl font-black text-slate-900">{stats.vacantUnits}</h2>
+            <p className="text-slate-400 text-xs font-bold mt-2">Inventory Available</p>
+          </button>
+
+          {/* LEASE INACTIVE */}
+          <button 
+            onClick={() => setActiveFilter(activeFilter === 'INACTIVE_LEASE' ? null : 'INACTIVE_LEASE')}
+            className={`flex flex-col p-6 rounded-[32px] border-2 transition-all text-left ${
+              activeFilter === 'INACTIVE_LEASE' ? 'border-amber-500 bg-amber-50 shadow-lg' : 'border-white bg-white shadow-sm hover:border-amber-200'
+            }`}
+          >
+            <div className="bg-amber-500 text-white p-3 rounded-2xl w-fit mb-4">
+              <FileWarning size={28} />
+            </div>
+            <p className="text-amber-600 font-black uppercase text-xs tracking-widest">Lease Inactive</p>
+            <h2 className="text-4xl font-black text-slate-900">{stats.inactiveLeases}</h2>
+            <p className="text-slate-400 text-xs font-bold mt-2">Expired or Pending</p>
+          </button>
+        </section>
+
+        {/* --- MANAGE PROPERTIES HEADER --- */}
+        <div className="flex items-center justify-between mb-8 border-t border-slate-200 pt-10">
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 tracking-tight">Portfolio Summary</h2>
+            <p className="text-slate-500 text-sm font-medium">Total Properties: {properties.length}</p>
           </div>
-        ) : (
-          <div className="flex flex-col items-center justify-center py-20 bg-white rounded-[32px] border-2 border-dashed border-slate-200">
-            <p className="text-slate-400 font-medium">No properties found. Start by adding one!</p>
-          </div>
-        )}
+          <button 
+            onClick={() => window.location.href = '/properties'}
+            className="flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-2xl font-bold hover:bg-black transition-all group"
+          >
+            Manage All Properties <ArrowRight size={18} className="group-hover:translate-x-1 transition-transform" />
+          </button>
+        </div>
+
+        {/* --- PROPERTY LIST WITH FILTER LOGIC --- */}
+        <div className="grid grid-cols-1 gap-8">
+          {properties.map((p: any) => {
+            // Filter units based on selection
+            const filteredUnits = p.units?.filter((u: any) => {
+              if (activeFilter === 'LATE') return u.payment_status === 'late';
+              if (activeFilter === 'VACANT') return !u.is_occupied;
+              if (activeFilter === 'INACTIVE_LEASE') return u.lease_status !== 'active' && u.is_occupied;
+              return true; // Default: show all
+            });
+
+            if (activeFilter && filteredUnits.length === 0) return null;
+
+            return (
+              <div key={p.id} className="bg-white rounded-[40px] p-8 border border-slate-200 shadow-sm relative overflow-hidden">
+                {/* Property Metadata Header */}
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8">
+                  <div className="flex items-center gap-5">
+                    <div className="bg-slate-100 p-4 rounded-3xl text-slate-900">
+                      <Building2 size={32} />
+                    </div>
+                    <div>
+                      <h3 className="text-2xl font-black text-slate-900">{p.name}</h3>
+                      <div className="flex gap-4 text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">
+                        <span>{p.units?.length} Total Units</span>
+                        <span>•</span>
+                        <span>{p.city}</span>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-8 px-8 py-4 bg-slate-50 rounded-3xl">
+                    <div className="text-center">
+                      <p className="text-[10px] font-black text-slate-400 uppercase">Revenue</p>
+                      <p className="text-lg font-black text-slate-900">${p.total_revenue || '0'}</p>
+                    </div>
+                    <div className="text-center border-l border-slate-200 pl-8">
+                      <p className="text-[10px] font-black text-slate-400 uppercase">Occupancy</p>
+                      <p className="text-lg font-black text-indigo-600">{Math.round((p.units?.filter((u:any)=>u.is_occupied).length / p.units?.length) * 100)}%</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Units List */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredUnits.map((u: any) => (
+                    <div key={u.id} className="group p-5 rounded-[24px] bg-slate-50 border border-slate-100 flex items-center justify-between hover:bg-white hover:border-indigo-200 transition-all cursor-pointer">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-1.5 h-10 rounded-full ${u.is_occupied ? 'bg-indigo-500' : 'bg-slate-300'}`} />
+                        <div>
+                          <p className="font-black text-slate-800 text-lg uppercase">{u.unit_code}</p>
+                          <p className="text-xs font-bold text-slate-400">{u.is_occupied ? u.tenant_name : 'Empty'}</p>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-black text-indigo-600">${u.monthly_rent}</p>
+                        <ChevronRight size={16} className="ml-auto text-slate-300 group-hover:text-indigo-600 transition-colors" />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            );
+          })}
+        </div>
       </main>
-
-      {/* --- MODALS --- */}
-
-      {isPropModalOpen && (
-        <PropertyModal 
-          onClose={() => setPropModalOpen(false)} 
-          onSubmit={handleCreateProperty} 
-          submitting={submitting} 
-        />
-      )}
-
-      {isUnitModalOpen && (
-        <UnitModal 
-          propertyName={activeProperty?.name}
-          onClose={() => { setUnitModalOpen(false); setActiveProperty(null); }} 
-          onSubmit={handleCreateUnit} 
-          submitting={submitting} 
-        />
-      )}
-
-      {isEditUnitModalOpen && (
-        <UnitModal 
-          propertyName={unitToEdit?.propertyName}
-          initialData={unitToEdit}
-          onClose={() => { setEditUnitModalOpen(false); setUnitToEdit(null); }} 
-          onSubmit={handleUpdateUnit} 
-          submitting={submitting} 
-        />
-      )}
-
-      {isInviteModalOpen && (
-        <TenantInviteModal
-          unit={unitForTenant}
-          propertyName={unitForTenant?.propertyName}
-          onClose={() => { setInviteModalOpen(false); setUnitForTenant(null); }}
-          onSubmit={handleOnboardTenant}
-          submitting={submitting}
-        />
-      )}
     </div>
   );
 }
