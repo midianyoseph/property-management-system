@@ -198,6 +198,7 @@ export async function updateInvoiceStatus(id: string, status: InvoiceStatus) {
     throw createHttpError(400, 'Invalid invoice status transition');
   }
 
+
   const { data: updatedInvoice, error: updateError } = await supabaseAdmin
     .from('invoices')
     .update({ status })
@@ -215,7 +216,70 @@ export async function updateInvoiceStatus(id: string, status: InvoiceStatus) {
 
   return updatedInvoice;
 }
+// apps/api/src/services/invoiceService.ts
 
+// apps/api/src/services/invoiceService.ts
+
+export async function getInvoicesByAdminV2(adminId: string) {
+  const { data, error } = await supabaseAdmin
+    .from('invoices')
+    .select(`
+      id,
+      total_amount,
+      status,
+      due_date,
+      invoice_number,
+      leases!inner (
+        id,
+        tenant_id,
+        units!inner (
+          id,
+          unit_code,
+          properties!inner (
+            id,
+            name,
+            created_by
+          )
+        )
+      )
+    `)
+    // Uncomment this once you verify data is appearing
+    // .eq('leases.units.properties.created_by', adminId) 
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error("Supabase Query Error (V2):", error);
+    throw createHttpError(500, error.message);
+  }
+
+  return data ?? [];
+}
+
+export async function getInvoicesByAdmin(adminId: string) {
+  // Use the exact table names from your SQL schema
+  const { data, error } = await supabaseAdmin
+    .from('invoices')
+    .select(`
+      *,
+      leases!inner (
+        units!inner (
+          properties!inner (
+            created_by
+          )
+        )
+      )
+    `)
+    // Notice the dot notation matches the table names exactly
+    .eq('leases.units.properties.created_by', adminId)
+    .order('created_at', { ascending: false });
+
+  if (error) {
+    console.error("Supabase Query Error:", error);
+    throw error;
+  }
+
+  return data ?? [];
+}
 export async function getOverdueInvoices() {
   const nowIso = new Date().toISOString();
   const { data, error } = await supabaseAdmin

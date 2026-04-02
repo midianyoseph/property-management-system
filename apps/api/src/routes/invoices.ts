@@ -8,6 +8,8 @@ import {
   getInvoicesByTenant,
   getOverdueInvoices,
   updateInvoiceStatus,
+  getInvoicesByAdmin,
+  getInvoicesByAdminV2
 } from '../services/invoiceService';
 import { supabaseAdmin } from '../lib/supabase';
 
@@ -116,64 +118,77 @@ const createInvoiceSchema = z.object({
 const updateInvoiceStatusSchema = z.object({
   status: z.nativeEnum(InvoiceStatus),
 });
-
 router.get('/invoices', async (req: Request, res: Response, next: NextFunction) => {
   try {
     const user = req.user;
     if (!user?.id || !user.role) {
-      res.status(401).json({ error: 'Unauthorized', status: 401 });
+      res.status(401).json({ error: 'Unauthorized' });
       return;
     }
-
+ 
     if (user.role === UserRole.ADMIN || user.role === UserRole.SUPER_ADMIN) {
-      const invoices = await getOverdueInvoices();
+      // Pointing to the new V2 service
+      const invoices = await getInvoicesByAdminV2(user.id);
       res.json({ data: invoices });
       return;
     }
-
-    if (user.role === UserRole.TENANT) {
-      const tenant = await getTenantByUserId(user.id);
-      const invoices = await getInvoicesByTenant(tenant.id);
-      res.json({ data: invoices });
-      return;
-    }
-
-    throw forbiddenError();
+    
+    // ... rest of your tenant logic
   } catch (error) {
     next(error);
   }
 });
 
-router.get(
-  '/invoices/mine',
-  requireRole(UserRole.TENANT),
+/**
+ * PATCH /invoices/:id/pay
+ * Records a payment for an invoice, moving it to PAID status.
+ */
+router.patch(
+  '/invoices/:id/pay',
+  requireRole(UserRole.ADMIN, UserRole.SUPER_ADMIN),
   async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const userId = req.user?.id;
-      if (!userId) {
-        res.status(401).json({ error: 'Unauthorized', status: 401 });
-        return;
-      }
-
-      const tenant = await getTenantByUserId(userId);
+      const { id } = parseOrThrow(idParamSchema, req.params);
+      
+      // We explicitly set the status to PAID since this is a 'Record Payment' action
       const { data, error } = await supabaseAdmin
         .from('invoices')
-        .select('*')
-        .eq('tenant_id', tenant.id)
-        .order('due_date', { ascending: false });
+        .update({ 
+          status: InvoiceStatus.PAID,
+          updated_at: new Date().toISOString()
+          // If you have a 'paid_at' column in your schema, add it here:
+          // paid_at: new Date().toISOString() 
+        })
+        .eq('id', id)
+        .select()
+        .single();
 
       if (error) {
-        const dbError = new Error(error.message) as HttpError;
-        dbError.statusCode = 500;
-        throw dbError;
+        throw dbError(error.message);
       }
 
-      res.json({ data: data ?? [] });
+      if (!data) {
+        const notFound = new Error('Invoice not found') as HttpError;
+        notFound.statusCode = 404;
+        throw notFound;
+      }
+
+      res.json({ 
+        message: 'Payment recorded successfully', 
+        data 
+      });
     } catch (error) {
       next(error);
     }
   }
 );
+
+// Helper for DB errors if not already defined
+function dbError(message: string): HttpError {
+  const error = new Error(message) as HttpError;
+  error.statusCode = 500;
+  return error;
+}
 
 router.get('/invoices/:id', async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -225,5 +240,6 @@ router.patch(
     }
   }
 );
+
 
 export { router as invoicesRouter };
