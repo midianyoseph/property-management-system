@@ -1,19 +1,16 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
   ArrowUpRight,
   CheckCircle,
   ChevronLeft,
   LayoutDashboard,
   Plus,
-  Send,
-  Wrench,
   X,
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import apiClient from '@/lib/api';
-import { createClient } from '@/lib/supabase/client';
 import { cn } from '@/lib/utils';
 
 type Ticket = {
@@ -73,14 +70,12 @@ const statusClasses: Record<Ticket['status'], string> = {
 };
 
 export default function MaintenancePage() {
-  const supabase = useMemo(() => createClient(), []);
   const locale = useLocale();
   const t = useTranslations('Maintenance');
 
   const [lease, setLease] = useState<Lease | null>(null);
   const [leaseError, setLeaseError] = useState(false);
   const [tickets, setTickets] = useState<Ticket[]>([]);
-  const [ticketsError, setTicketsError] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const [showForm, setShowForm] = useState(false);
@@ -93,7 +88,6 @@ export default function MaintenancePage() {
 
   const [selectedTicketId, setSelectedTicketId] = useState<string | null>(null);
   const [selectedTicket, setSelectedTicket] = useState<TicketWithComments | null>(null);
-  const [commentsLoading, setCommentsLoading] = useState(false);
   const [commentInput, setCommentInput] = useState('');
   const [commentSubmitting, setCommentSubmitting] = useState(false);
 
@@ -114,7 +108,6 @@ export default function MaintenancePage() {
           setLease(Array.isArray(leaseData) ? leaseData[0] ?? null : leaseData ?? null);
         }
         if ('error' in ticketsResponse) {
-          setTicketsError(true);
         } else {
           const ticketData = (ticketsResponse?.data ?? ticketsResponse) as Ticket[] | null;
           setTickets(ticketData ?? []);
@@ -134,7 +127,6 @@ export default function MaintenancePage() {
         setSelectedTicket(null);
         return;
       }
-      setCommentsLoading(true);
       try {
         const response = await apiClient.get(`/api/maintenance/${selectedTicketId}`);
         if (!isMounted) return;
@@ -144,7 +136,6 @@ export default function MaintenancePage() {
       } catch {
         if (isMounted) setSelectedTicket(null);
       } finally {
-        if (isMounted) setCommentsLoading(false);
       }
     };
     void loadTicketDetail();

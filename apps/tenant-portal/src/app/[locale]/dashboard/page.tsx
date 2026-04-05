@@ -85,7 +85,7 @@ export default function TenantDashboardPage() {
         const [leaseResponse, invoiceResponse, maintenanceResponse, documentsResponse] =
           await Promise.all([
             apiClient.get('/api/leases/mine').catch((error: Error) => ({ error })),
-            apiClient.get('/api/invoices').catch((error: Error) => ({ error })),
+            apiClient.get('/api/invoices/mine').catch((error: Error) => ({ error })),
             apiClient.get('/api/maintenance').catch((error: Error) => ({ error })),
             apiClient.get('/api/lease-documents').catch((error: Error) => ({ error })),
           ]);
@@ -155,7 +155,7 @@ export default function TenantDashboardPage() {
         <div className="flex items-center gap-2 mb-1">
           <LayoutDashboard size={16} className="text-amber-700" />
           <p className="text-amber-700 font-black text-xs uppercase tracking-widest">
-            {t('portalTag')}
+            {t('portalLabel')}
           </p>
         </div>
         {displayName ? (
@@ -191,7 +191,7 @@ export default function TenantDashboardPage() {
                 </div>
               </div>
               <p className="text-stone-400 font-black text-[10px] uppercase tracking-widest leading-none mb-2">
-                {t('lease')}
+                {t('leaseLabel')}
               </p>
               {errors.lease ? (
                 <>
@@ -230,7 +230,7 @@ export default function TenantDashboardPage() {
                 </div>
               </div>
               <p className="text-stone-400 font-black text-[10px] uppercase tracking-widest leading-none mb-2">
-                {t('payments')}
+                {t('paymentsLabel')}
               </p>
               {errors.invoices ? (
                 <>
@@ -246,17 +246,17 @@ export default function TenantDashboardPage() {
                   </div>
                   {invoiceIsOverdue && (
                     <span className="inline-flex rounded-full bg-red-100 px-2 py-0.5 text-xs font-black text-red-700 mb-1">
-                      {t('overdueTag')}
+                      {t('overdue')}
                     </span>
                   )}
                   {nextPaymentDue ? (
-                    <p className="text-stone-400 text-xs font-medium">{t('dueOn')} {nextPaymentDue}</p>
+                    <p className="text-stone-400 text-xs font-medium">{t('due')} {nextPaymentDue}</p>
                   ) : null}
                 </>
               ) : (
                 <>
                   <h3 className="text-3xl font-black text-stone-900 mb-2">{t('upToDate')}</h3>
-                  <p className="text-stone-400 text-xs font-medium">{t('noBalance')}</p>
+                  <p className="text-stone-400 text-xs font-medium">{t('noOutstandingBalance')}</p>
                 </>
               )}
               <div className="mt-auto pt-4">
@@ -274,7 +274,7 @@ export default function TenantDashboardPage() {
                 </div>
               </div>
               <p className="text-stone-400 font-black text-[10px] uppercase tracking-widest leading-none mb-2">
-                {t('maintenance')}
+                {t('maintenanceLabel')}
               </p>
               {errors.maintenance ? (
                 <>
@@ -304,7 +304,7 @@ export default function TenantDashboardPage() {
                 </div>
               </div>
               <p className="text-stone-400 font-black text-[10px] uppercase tracking-widest leading-none mb-2">
-                {t('documents')}
+                {t('documentsLabel')}
               </p>
               {errors.documents ? (
                 <>
@@ -315,13 +315,13 @@ export default function TenantDashboardPage() {
                 <>
                   <h3 className="text-3xl font-black text-stone-900 mb-2">{documentCount ?? 0}</h3>
                   <p className="text-stone-400 text-xs font-medium">
-                    {documentCount && documentCount > 0 ? t('docsAvailable') : t('noDocs')}
+                    {documentCount && documentCount > 0 ? t('documentsAvailable') : t('noDocuments')}
                   </p>
                 </>
               )}
               <div className="mt-auto pt-4">
                 <Link href={`${localePrefix}/lease`} className="text-xs font-black text-amber-700 uppercase tracking-widest hover:text-amber-900">
-                  {t('viewInLease')} →
+                  {t('viewInMyLease')} →
                 </Link>
               </div>
             </div>

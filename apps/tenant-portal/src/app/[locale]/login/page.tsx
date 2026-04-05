@@ -2,14 +2,13 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { Home, Lock, Mail, Loader2, Languages, ShieldAlert, KeyRound, Coffee } from 'lucide-react';
 import { useTranslations, useLocale } from 'next-intl';
 
 export default function TenantLoginPage() {
   const t = useTranslations('Login');
   const locale = useLocale();
-  const pathname = usePathname();
   const router = useRouter();
   
   const supabase = createClient();

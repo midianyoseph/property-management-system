@@ -1,8 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  ArrowUpRight,
   Calendar,
   Download,
   FileText,
@@ -13,8 +12,6 @@ import {
 } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import apiClient from '@/lib/api';
-import { createClient } from '@/lib/supabase/client';
-import { defaultLocale } from '@/i18n/config';
 
 type Lease = {
   id: string;
@@ -76,7 +73,6 @@ function daysBetween(start: Date, end: Date) {
 }
 
 export default function LeasePage() {
-  const supabase = useMemo(() => createClient(), []);
   const locale = useLocale();
   const t = useTranslations('Lease');
   

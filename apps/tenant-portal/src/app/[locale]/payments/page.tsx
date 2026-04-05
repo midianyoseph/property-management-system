@@ -1,10 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { CreditCard } from 'lucide-react';
 import { useLocale, useTranslations } from 'next-intl';
 import apiClient from '@/lib/api';
-import { createClient } from '@/lib/supabase/client';
 
 type Invoice = {
   id: string;
@@ -59,7 +58,6 @@ const formatTimestamp = (value?: string | null, locale: string = 'en') => {
 };
 
 export default function PaymentsPage() {
-  const supabase = useMemo(() => createClient(), []);
   const locale = useLocale();
   const t = useTranslations('Payments');
   
